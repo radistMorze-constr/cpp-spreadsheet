@@ -4,6 +4,8 @@
 #include "common.h"
 
 #include <functional>
+#include <unordered_map>
+#include <unordered_set>
 
 class Sheet : public SheetInterface {
 public:
@@ -21,14 +23,16 @@ public:
     void PrintValues(std::ostream& output) const override;
     void PrintTexts(std::ostream& output) const override;
 
-    const Cell* GetConcreteCell(Position pos) const;
-    Cell* GetConcreteCell(Position pos);
-
+	// Можете дополнить ваш класс нужными полями и методами
+    bool IsInsideSheet(Position pos);
 private:
-    void MaybeIncreaseSizeToIncludePosition(Position pos);
-    void PrintCells(std::ostream& output,
-                    const std::function<void(const CellInterface&)>& printCell) const;
-    Size GetActualSize() const;
+	// Можете дополнить ваш класс нужными полями и методами
+    Size size_;
+    std::unordered_map<Position, Cell, PositionHasher> cells_;
 
-    std::vector<std::vector<std::unique_ptr<Cell>>> cells_;
+    enum class PrintType {
+        Values,
+        Text
+    };
+    void Print(std::ostream& output, Sheet::PrintType type) const;
 };

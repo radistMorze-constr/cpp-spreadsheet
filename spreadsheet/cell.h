@@ -3,24 +3,26 @@
 #include "common.h"
 #include "formula.h"
 
-#include <functional>
 #include <unordered_set>
+#include <optional>
 
 class Sheet;
 
 class Cell : public CellInterface {
 public:
-    Cell(Sheet& sheet);
+    explicit Cell(Sheet& sheet);
     ~Cell();
 
-    void Set(std::string text);
-    void Clear();
+    void Set(Position current_pos, std::string text);
+    void Clear(Position pos);
 
     Value GetValue() const override;
     std::string GetText() const override;
-    std::vector<Position> GetReferencedCells() const override;
 
-    bool IsReferenced() const;
+    std::vector<Position> GetReferencedCells() const override;
+    void InvalidateCache();
+
+    void HasCircularDependency(const std::vector<Position>& cells, Position current_pos, std::unordered_set<Position, PositionHasher>& verified_cells);
 
 private:
     class Impl;
@@ -28,9 +30,9 @@ private:
     class TextImpl;
     class FormulaImpl;
 
+    Sheet& sheet_;
     std::unique_ptr<Impl> impl_;
-
-    // Добавьте поля и методы для связи с таблицей, проверки циклических 
-    // зависимостей, графа зависимостей и т. д.
-
+    mutable std::optional<Value> cached_value_;
+    std::unordered_set<Position, PositionHasher> referenced_cells_;
+    std::unordered_set<Position, PositionHasher> dependent_cells_;
 };

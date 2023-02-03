@@ -8,6 +8,8 @@
 #include <variant>
 #include <vector>
 
+const double MAX_EPS = 0.000001;
+
 // Позиция ячейки. Индексация с нуля.
 struct Position {
     int row = 0;
@@ -24,6 +26,12 @@ struct Position {
     static const int MAX_ROWS = 16384;
     static const int MAX_COLS = 16384;
     static const Position NONE;
+};
+
+struct PositionHasher {
+    std::size_t operator()(const Position& key) const {
+        return key.row * 41 + key.col * 41 * 41;
+    }
 };
 
 struct Size {
