@@ -13,8 +13,8 @@ public:
     explicit Cell(Sheet& sheet);
     ~Cell();
 
-    void Set(Position current_pos, std::string text);
-    void Clear(Position pos);
+    void Set(std::string text);
+    void Clear();
 
     Value GetValue() const override;
     std::string GetText() const override;
@@ -22,17 +22,18 @@ public:
     std::vector<Position> GetReferencedCells() const override;
     void InvalidateCache();
 
-    void HasCircularDependency(const std::vector<Position>& cells, Position current_pos, std::unordered_set<Position, PositionHasher>& verified_cells);
-
 private:
     class Impl;
     class EmptyImpl;
     class TextImpl;
     class FormulaImpl;
 
+    //using member "sheet_"
+    void ThrowIfCircularDependency(const std::vector<Position>& cells, Cell* current_cell, std::unordered_set<Position, PositionHasher>& verified_cells);
+
     Sheet& sheet_;
     std::unique_ptr<Impl> impl_;
     mutable std::optional<Value> cached_value_;
-    std::unordered_set<Position, PositionHasher> referenced_cells_;
-    std::unordered_set<Position, PositionHasher> dependent_cells_;
+    std::unordered_set<Cell*> referenced_cells_;
+    std::unordered_set<Cell*> dependent_cells_;
 };

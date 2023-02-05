@@ -107,7 +107,7 @@ Cell::Cell(Sheet& sheet)
 
 Cell::~Cell() {}
 
-void Cell::Set(Position current_pos, std::string text) {
+void Cell::Set(std::string text) {
     using namespace std::literals;
 
     if (text == GetText()) {
@@ -123,35 +123,38 @@ void Cell::Set(Position current_pos, std::string text) {
     else {
         temp = std::make_unique<TextImpl>(text);
     }
-    std::unordered_set<Position, PositionHasher> verified_cells;
-    HasCircularDependency(temp->GetReferencedCells(), current_pos, verified_cells);
+
+    {
+        std::unordered_set<Position, PositionHasher> verified_cells;
+        ThrowIfCircularDependency(temp->GetReferencedCells(), this, verified_cells);
+    }
 
     InvalidateCache();
 
-    for (const auto& pos : referenced_cells_) {
-        auto cell = dynamic_cast<Cell*>(sheet_.GetCell(pos));
-        cell->dependent_cells_.erase(current_pos);
+    for (const auto& cell : referenced_cells_) {
+        //auto cell = dynamic_cast<Cell*>(sheet_.GetCell(pos)));
+        cell->dependent_cells_.erase(this);
     }
     referenced_cells_.clear();
 
     for (const auto& pos : temp->GetReferencedCells()) {
         auto cell = dynamic_cast<Cell*>(sheet_.GetCell(pos));
-        referenced_cells_.insert(pos);
+        referenced_cells_.insert(cell);
         if (!cell) {
             sheet_.SetCell(pos, ""s);
             cell = dynamic_cast<Cell*>(sheet_.GetCell(pos));
         }
-        cell->dependent_cells_.insert(current_pos);
+        cell->dependent_cells_.insert(this);
     }
     impl_ = std::move(temp);
 }
 
-void Cell::HasCircularDependency(const std::vector<Position>& cells, Position current_pos, std::unordered_set<Position, PositionHasher>& verified_cells) {
+void Cell::ThrowIfCircularDependency(const std::vector<Position>& cells, Cell* current_cell, std::unordered_set<Position, PositionHasher>& verified_cells) {
     for (const auto& pos : cells) {
         if (verified_cells.count(pos)) {
             continue;
         }
-        if (pos == current_pos) {
+        if (sheet_.GetCell(pos) == current_cell) {
             throw CircularDependencyException("");
         }
         verified_cells.insert(pos);
@@ -159,12 +162,12 @@ void Cell::HasCircularDependency(const std::vector<Position>& cells, Position cu
         if (!cell) {
             continue;
         }
-        HasCircularDependency(cell->GetReferencedCells(), current_pos, verified_cells);
+        ThrowIfCircularDependency(cell->GetReferencedCells(), current_cell, verified_cells);
     }
 }
 
-void Cell::Clear(Position pos) {
-    Set(pos, "");
+void Cell::Clear() {
+    Set("");
 }
 
 void Cell::InvalidateCache() {
@@ -172,8 +175,8 @@ void Cell::InvalidateCache() {
         return;
     }
     cached_value_.reset();
-    for (const auto& pos : dependent_cells_) {
-        auto cell = dynamic_cast<Cell*>(sheet_.GetCell(pos));
+    for (const auto& cell : dependent_cells_) {
+        //auto cell = dynamic_cast<Cell*>(sheet_.GetCell(pos));
         cell->InvalidateCache();
     }
 }

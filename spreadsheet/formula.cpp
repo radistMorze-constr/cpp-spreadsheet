@@ -89,9 +89,6 @@ public:
         catch (InvalidPositionException const& e) {
             return FormulaError{ FormulaError::Category::Ref };
         }
-        catch (...) {
-            throw "Unknown error!"s;
-        }
     }
 
     std::string GetExpression() const override {

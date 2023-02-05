@@ -28,7 +28,7 @@ public:
 private:
 	// Можете дополнить ваш класс нужными полями и методами
     Size size_;
-    std::unordered_map<Position, Cell, PositionHasher> cells_;
+    std::unordered_map<Position, std::unique_ptr<Cell>, PositionHasher> cells_;
 
     enum class PrintType {
         Values,

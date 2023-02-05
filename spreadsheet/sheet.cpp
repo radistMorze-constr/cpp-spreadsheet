@@ -18,9 +18,9 @@ void Sheet::SetCell(Position pos, std::string text) {
         throw InvalidPositionException("");
     }
     if (!cells_.count(pos)) {
-        cells_.emplace(pos, *this);
+        cells_.emplace(pos, std::make_unique<Cell>(*this));
     }
-    cells_.at(pos).Set(pos, std::move(text));
+    cells_.at(pos)->Set(std::move(text));
     if (pos.col + 1 > size_.cols) {
         size_.cols = pos.col + 1;
     }
@@ -43,7 +43,7 @@ CellInterface* Sheet::GetCell(Position pos) {
     if (!cells_.count(pos)) {
         return nullptr;
     }
-    return &cells_.at(pos);
+    return cells_.at(pos).get();
 }
 
 void Sheet::ClearCell(Position pos) {
@@ -94,10 +94,10 @@ void Sheet::Print(std::ostream& output, Sheet::PrintType type) const {
             auto pos = Position{ i, j };
             if (cells_.count(pos)) {
                 if (type == PrintType::Text) {
-                    output << cells_.at(pos).GetText();
+                    output << cells_.at(pos)->GetText();
                 }
                 else {
-                    auto cell = cells_.at(pos).GetValue();
+                    auto cell = cells_.at(pos)->GetValue();
                     std::visit([&cell, &output](const auto& arg) {output << arg; }, cell);
                 }
             }
